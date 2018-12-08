@@ -1,0 +1,67 @@
+run:
+  concurrency: 8
+  deadline: 30s
+
+  skip-files:
+  - lib/bad.go
+
+output:
+  # colored-line-number|line-number|json|tab|checkstyle, default is "colored-line-number"
+  format: colored-line-number
+
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  govet:
+    check-shadowing: true
+    use-installed-packages: false
+
+  golint:
+    min-confidence: 0.8
+
+  gofmt:
+    simplify: true
+
+  gocyclo:
+    min-complexity: 10
+
+  maligned:
+    suggest-new: true
+
+  dupl:
+    threshold: 100
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  misspell:
+    locale: US
+
+  lll:
+    line-length: 120
+    tab-width: 4
+
+  unused:
+    check-exported: false
+
+  unparam:
+    algo: cha
+    check-exported: false
+
+  nakedret:
+    max-func-lines: 30
+
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: true
+
+linters:
+  enable-all: true
+  fast: false
