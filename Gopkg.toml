@@ -1,6 +1,5 @@
 required = [
-  "github.com/go-resty/resty",
-  "github.com/pkg/errors"
+  "github.com/go-resty/resty"
 ]
 
 [prune]

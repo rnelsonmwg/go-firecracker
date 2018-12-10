@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-resty/resty"
 	"net"
 	"net/http"
+
+	"github.com/go-resty/resty"
 )
 
 type InstanceState string
@@ -29,7 +30,7 @@ type apiError struct {
 }
 
 var (
-	errInvalidServerError = errors.New("invalid server error response")
+	errInvalidServerError    = errors.New("invalid server error response")
 	errInvalidServerResponse = errors.New("invalid server response")
 )
 
@@ -78,6 +79,31 @@ func New(host string, port int) *Firecracker {
 	return cracker
 }
 
+func (cracker *Firecracker) responseError(resp *resty.Response, status int) error {
+	if resp.StatusCode() != status {
+		if e, ok := resp.Error().(*apiError); ok {
+			return errors.New(e.Message)
+		}
+
+		return errInvalidServerError
+	}
+
+	return nil
+}
+
+func (cracker *Firecracker) responseErrorStrict(resp *resty.Response, status int) error {
+	if resp.StatusCode() != status {
+		if e, ok := resp.Error().(*apiError); ok {
+			return errors.New(e.Message)
+		}
+
+		return errInvalidServerError
+	}
+
+	return errInvalidServerResponse
+}
+
+// State returns instance ID.
 func (cracker *Firecracker) ID() (string, error) {
 	_, err := cracker.State()
 	if err != nil {
@@ -87,6 +113,7 @@ func (cracker *Firecracker) ID() (string, error) {
 	return cracker.id, nil
 }
 
+// State returns the state of the instance, one of: Uninitialized, Starting, Running, Halting, Halted.
 func (cracker *Firecracker) State() (InstanceState, error) {
 	resp, err := cracker.client.R().
 		SetHeader("Accept", "application/json").
@@ -98,12 +125,8 @@ func (cracker *Firecracker) State() (InstanceState, error) {
 		return Uninitialized, err
 	}
 
-	if resp.StatusCode() != http.StatusOK {
-		if e, ok := resp.Error().(*apiError); ok {
-			return Uninitialized, errors.New(e.Message)
-		}
-
-		return Uninitialized, errInvalidServerError
+	if err = cracker.responseError(resp, http.StatusOK); err != nil {
+		return Uninitialized, err
 	}
 
 	if info, ok := resp.Result().(*instanceInfo); ok {
@@ -120,7 +143,7 @@ func (cracker *Firecracker) action(typ string, payload string) error {
 		SetError(&apiError{}).
 		SetBody(map[string]interface{}{
 			"action_type": typ,
-			"payload": payload,
+			"payload":     payload,
 		}).
 		Put("/")
 
@@ -128,15 +151,8 @@ func (cracker *Firecracker) action(typ string, payload string) error {
 		return err
 	}
 
-	if resp.StatusCode() != http.StatusNoContent { // heavy chems in action
-		if e, ok := resp.Error().(*apiError); ok {
-			return errors.New(e.Message)
-		}
 
-		return errInvalidServerError
-	}
-
-	return errInvalidServerResponse
+	return cracker.responseErrorStrict(resp, http.StatusNoContent)
 }
 
 // Rescan available block devices.

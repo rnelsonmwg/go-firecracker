@@ -1,7 +1,6 @@
 package firecracker
 
 import (
-	"errors"
 	"net/http"
 )
 
@@ -9,12 +8,20 @@ type LoggingLevel string
 
 const (
 	ErrorLoggingLevel   LoggingLevel = "Error"
-	WarningLoggingLevel              = "Warning"
-	InfoLoggingLevel                 = "Info"
-	DebugLoggingLevel                = "Debug"
+	WarningLoggingLevel LoggingLevel = "Warning"
+	InfoLoggingLevel    LoggingLevel = "Info"
+	DebugLoggingLevel   LoggingLevel = "Debug"
 )
 
-func (cracker *Firecracker) InitLogger(loggerPipeName string, metricsPipeName string, level LoggingLevel, showLevel bool, showOrigin bool) error {
+// InitLogger adds a logger with two named pipes for logging and metrics at a specific LoggingLevel.
+// `showLevel` adds a logging level to the logger output, and `showOrigin` adds a file:line number.
+func (cracker *Firecracker) InitLogger(
+	loggerPipeName string,
+	metricsPipeName string,
+	level LoggingLevel,
+	showLevel bool,
+	showOrigin bool,
+) error {
 	resp, err := cracker.client.R().
 		SetHeader("Accept", "application/json").
 		SetError(&apiError{}).
@@ -31,13 +38,5 @@ func (cracker *Firecracker) InitLogger(loggerPipeName string, metricsPipeName st
 		return err
 	}
 
-	if resp.StatusCode() != http.StatusNoContent {
-		if e, ok := resp.Error().(*apiError); ok {
-			return errors.New(e.Message)
-		}
-
-		return errInvalidServerError
-	}
-
-	return errInvalidServerResponse
+	return cracker.responseErrorStrict(resp, http.StatusNoContent)
 }

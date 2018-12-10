@@ -1,4 +1,7 @@
 .idea
+.test
+
+vendor
 
 # Binaries for programs and plugins
 *.exe

@@ -1,7 +1,6 @@
 package firecracker
 
 import (
-	"errors"
 	"net/http"
 )
 
@@ -26,13 +25,5 @@ func (cracker *Firecracker) SetBootSource(imagePath string, bootArgs string) err
 		return err
 	}
 
-	if resp.StatusCode() != http.StatusNoContent {
-		if e, ok := resp.Error().(*apiError); ok {
-			return errors.New(e.Message)
-		}
-
-		return errInvalidServerError
-	}
-
-	return errInvalidServerResponse
+	return cracker.responseErrorStrict(resp, http.StatusNoContent)
 }

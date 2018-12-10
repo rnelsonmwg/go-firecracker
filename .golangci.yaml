@@ -2,9 +2,6 @@ run:
   concurrency: 8
   deadline: 30s
 
-  skip-files:
-  - lib/bad.go
-
 output:
   # colored-line-number|line-number|json|tab|checkstyle, default is "colored-line-number"
   format: colored-line-number

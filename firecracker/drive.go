@@ -1,7 +1,6 @@
 package firecracker
 
 import (
-	"errors"
 	"net/http"
 )
 
@@ -14,11 +13,19 @@ type StorageDrive struct {
 	Limiter       RateLimiter `json:"rate_limiter"`
 }
 
+// SetDrive adds or updates a vm drive with specified ID.
 func (cracker *Firecracker) SetDrive(id string, hostPath string, isReadOnly bool, isRoot bool, uuid string) error {
 	return cracker.SetDriveWithLimiter(id, hostPath, isReadOnly, isRoot, uuid, nil)
 }
 
-func (cracker *Firecracker) SetDriveWithLimiter(id string, hostPath string, isReadOnly bool, isRoot bool, uuid string, limiter *RateLimiter) error {
+func (cracker *Firecracker) SetDriveWithLimiter(
+	id string,
+	hostPath string,
+	isReadOnly bool,
+	isRoot bool,
+	uuid string,
+	limiter *RateLimiter,
+) error {
 	resp, err := cracker.client.R().
 		SetHeader("Accept", "application/json").
 		SetPathParams(map[string]string{
@@ -39,17 +46,10 @@ func (cracker *Firecracker) SetDriveWithLimiter(id string, hostPath string, isRe
 		return err
 	}
 
-	if resp.StatusCode() != http.StatusNoContent {
-		if e, ok := resp.Error().(*apiError); ok {
-			return errors.New(e.Message)
-		}
-
-		return errInvalidServerError
-	}
-
-	return errInvalidServerResponse
+	return cracker.responseErrorStrict(resp, http.StatusNoContent)
 }
 
+// UpdateDrivePath updates vm drive path by ID.
 func (cracker *Firecracker) UpdateDrivePath(id string, hostPath string) error {
 	resp, err := cracker.client.R().
 		SetHeader("Accept", "application/json").
@@ -67,13 +67,5 @@ func (cracker *Firecracker) UpdateDrivePath(id string, hostPath string) error {
 		return err
 	}
 
-	if resp.StatusCode() != http.StatusNoContent {
-		if e, ok := resp.Error().(*apiError); ok {
-			return errors.New(e.Message)
-		}
-
-		return errInvalidServerError
-	}
-
-	return errInvalidServerResponse
+	return cracker.responseErrorStrict(resp, http.StatusNoContent)
 }

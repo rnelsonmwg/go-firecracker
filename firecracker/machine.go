@@ -5,9 +5,21 @@ import (
 	"net/http"
 )
 
+type CPUTemplate string
+
+const (
+	C3Template CPUTemplate = "C3"
+	T2Template CPUTemplate = "T2"
+)
+
 type MachineConfig struct {
+	VCpuCount   int64       `json:"vcpu_count"`
+	MemSizeMb   int64       `json:"mem_size_mib"`
+	HTEnabled   bool        `json:"ht_enabled"`
+	CPUTemplate CPUTemplate `json:"cpu_template"`
 }
 
+// Config returns machine config of the vm, cpu/mem limits
 func (cracker *Firecracker) Config() (*MachineConfig, error) {
 	resp, err := cracker.client.R().
 		SetHeader("Accept", "application/json").
@@ -34,6 +46,7 @@ func (cracker *Firecracker) Config() (*MachineConfig, error) {
 	return nil, errInvalidServerResponse
 }
 
+// SetConfig sets desired machine config for the vm, cpu/mem limits
 func (cracker *Firecracker) SetConfig(config *MachineConfig) error {
 	resp, err := cracker.client.R().
 		SetHeader("Accept", "application/json").
@@ -45,13 +58,5 @@ func (cracker *Firecracker) SetConfig(config *MachineConfig) error {
 		return err
 	}
 
-	if resp.StatusCode() != http.StatusNoContent {
-		if e, ok := resp.Error().(*apiError); ok {
-			return errors.New(e.Message)
-		}
-
-		return errInvalidServerError
-	}
-
-	return errInvalidServerResponse
+	return cracker.responseErrorStrict(resp, http.StatusNoContent)
 }
