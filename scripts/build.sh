@@ -1,43 +1,16 @@
 #!/usr/bin/env bash
 
-set +e
-
 cd "$(dirname "$0")"
 
-GIT_PROVIDER="github.com"
-GIT_REPO="bitsnap/go-firecracker"
+[[ ! -f  "./env.coveralls" ]] && echo 'COVERALLS_TOKEN=""' >  ./env.coveralls
 
-CLIENT_DOCKERFILE="build/client/Dockerfile.local"
-[ "$1" == "ci" ] && CLIENT_DOCKERFILE="build/client/Dockerfile"
+source ./env
+source ./env.coveralls
 
-docker build -t go-firecracker/dependencies \
-	--build-arg BUILD_UID=$(id -u) \
-	-f build/dependencies/Dockerfile \
+docker build -t go-firecracker \
+    --build-arg BUILD_UID=${BUILD_UID} \
+    --build-arg GIT_PROVIDER=${GIT_PROVIDER} \
+    --build-arg GIT_REPO=${GIT_REPO} \
+    --build-arg COVERALLS_TOKEN=${COVERALLS_TOKEN} \
+	-f docker/Dockerfile \
 	..
-
-docker build -t go-firecracker/client \
-    --build-arg GIT_PROVIDER=${GIT_PROVIDER} \
-    --build-arg GIT_REPO=${GIT_REPO} \
-    --build-arg BUILD_UID=$(id -u) \
-    --no-cache \
-    -f ${CLIENT_DOCKERFILE} \
-    ..
-
-PIDS=()
-docker build -t go-firecracker/lint \
-    --build-arg BUILD_UID=$(id -u) \
-    -f lint/Dockerfile \
-    .. &
-PIDS[0]=$!
-
-docker build -t go-firecracker/test \
-    --build-arg BUILD_UID=$(id -u) \
-    --build-arg GIT_PROVIDER=${GIT_PROVIDER} \
-    --build-arg GIT_REPO=${GIT_REPO} \
-    -f test/Dockerfile \
-    .. &
-PIDS[1]=$!
-
-for pid in ${PIDS[*]}; do
-    wait ${pid}
-done

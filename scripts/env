@@ -1,0 +1,3 @@
+GIT_PROVIDER="github.com"
+GIT_REPO="bitsnap/go-firecracker"
+BUILD_UID=$(id -u)

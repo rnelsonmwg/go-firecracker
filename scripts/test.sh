@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 
-GIT_PROVIDER="github.com"
-GIT_REPO="bitsnap/go-firecracker"
-
 cd "$(dirname "$0")"
 
-./build.sh > /dev/null
+[[ ! -f  "./env.coveralls" ]] && echo 'COVERALLS_TOKEN=""' >  ./env.coveralls
+
+source ./env
+source ./env.coveralls
 
 cd ..
-mkdir -p .test
 
 docker run -it --rm \
-    --name go-firecracker-testing \
-    -v "$(pwd)"/.test:/go/src/${GIT_PROVIDER}/${GIT_REPO}/.test \
-    go-firecracker/test:latest
+    --name go-firecracker-env \
+    -v "$(pwd)"/:/go/src/${GIT_PROVIDER}/${GIT_REPO} \
+    --device=/dev/kvm:/dev/kvm \
+    --privileged \
+    --security-opt seccomp=unconfined \
+    --ulimit core=0 \
+    go-firecracker:latest
