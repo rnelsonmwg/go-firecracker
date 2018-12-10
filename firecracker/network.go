@@ -7,13 +7,13 @@ import (
 type NetworkInterface struct {
 	ID string `json:"iface_id"`
 
-	GuestMACAddr string `json:"guest_mac"`
-	HostDevName  string `json:"host_dev_name"`
+	GuestMACAddr string `json:"guest_mac,omitempty"`
+	HostDevName  string `json:"host_dev_name,omitempty"`
 	// Device will reply to HTTP GET metadata requests
-	AllowGettingMetadata bool `json:"allow_mmds_requests"`
+	AllowGettingMetadata bool `json:"allow_mmds_requests,omitempty"`
 
-	RxLimiter RateLimiter `json:"rx_rate_limiter"`
-	TxLimiter RateLimiter `json:"Tx_rate_limiter"`
+	RxLimiter RateLimiter `json:"rx_rate_limiter,omitempty"`
+	TxLimiter RateLimiter `json:"Tx_rate_limiter,omitempty"`
 }
 
 // CreateNetworkInterface creates a network interface.

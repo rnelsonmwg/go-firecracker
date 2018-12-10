@@ -9,37 +9,20 @@ type StorageDrive struct {
 	HostPath      string      `json:"path_on_host"`
 	IsRoot        bool        `json:"is_root_device"`
 	IsReadOnly    bool        `json:"is_read_only"`
-	PartitionUUID string      `json:"partuuid"`
-	Limiter       RateLimiter `json:"rate_limiter"`
+	PartitionUUID string      `json:"partuuid,omitempty"`
+	Limiter       *RateLimiter `json:"rate_limiter,omitempty"`
 }
 
-// SetDrive adds or updates a vm drive with specified ID.
-func (cracker *Firecracker) SetDrive(id string, hostPath string, isReadOnly bool, isRoot bool, uuid string) error {
-	return cracker.SetDriveWithLimiter(id, hostPath, isReadOnly, isRoot, uuid, nil)
-}
-
-func (cracker *Firecracker) SetDriveWithLimiter(
-	id string,
-	hostPath string,
-	isReadOnly bool,
-	isRoot bool,
-	uuid string,
-	limiter *RateLimiter,
+func (cracker *Firecracker) SetDrive(
+	drive *StorageDrive,
 ) error {
 	resp, err := cracker.client.R().
 		SetHeader("Accept", "application/json").
 		SetPathParams(map[string]string{
-			"drive_id": id,
+			"drive_id": drive.ID,
 		}).
 		SetError(&apiError{}).
-		SetBody(&StorageDrive{
-			ID:            id,
-			HostPath:      hostPath,
-			IsRoot:        isRoot,
-			IsReadOnly:    isReadOnly,
-			PartitionUUID: uuid,
-			Limiter:       *limiter,
-		}).
+		SetBody(drive).
 		Put("/drives/{drive_id}")
 
 	if err != nil {

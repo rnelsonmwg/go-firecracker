@@ -13,25 +13,21 @@ const (
 	DebugLoggingLevel   LoggingLevel = "Debug"
 )
 
+type Logger struct {
+	LoggerPipeName  string       `json:"log_fifo,omitempty"`
+	MetricsPipeName string       `json:"metrics_fifo,omitempty"`
+	Level           LoggingLevel `json:"level,omitempty"`
+	ShowLevel       bool         `json:"show_level,omitempty"`
+	ShowOrigin      bool         `json:"show_log_origin,omitempty"`
+}
+
 // InitLogger adds a logger with two named pipes for logging and metrics at a specific LoggingLevel.
 // `showLevel` adds a logging level to the logger output, and `showOrigin` adds a file:line number.
-func (cracker *Firecracker) InitLogger(
-	loggerPipeName string,
-	metricsPipeName string,
-	level LoggingLevel,
-	showLevel bool,
-	showOrigin bool,
-) error {
+func (cracker *Firecracker) InitLogger(logger *Logger) error {
 	resp, err := cracker.client.R().
 		SetHeader("Accept", "application/json").
 		SetError(&apiError{}).
-		SetBody(map[string]interface{}{
-			"log_fifo":        loggerPipeName,
-			"metrics_fifo":    metricsPipeName,
-			"level":           level,
-			"show_level":      showLevel,
-			"show_log_origin": showOrigin, // file path and line number
-		}).
+		SetBody(logger).
 		Put("/logger")
 
 	if err != nil {

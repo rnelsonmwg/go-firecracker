@@ -22,7 +22,7 @@ const (
 
 type instanceInfo struct {
 	ID    string        `json:"id"`
-	State InstanceState `json:"state"`
+	State InstanceState `json:"state,omitempty"`
 }
 
 type apiError struct {
@@ -79,28 +79,28 @@ func New(host string, port int) *Firecracker {
 	return cracker
 }
 
-func (cracker *Firecracker) responseError(resp *resty.Response, status int) error {
+func (cracker *Firecracker) responseError(resp *resty.Response, status int, strict bool) error {
 	if resp.StatusCode() != status {
 		if e, ok := resp.Error().(*apiError); ok {
 			return errors.New(e.Message)
 		}
 
 		return errInvalidServerError
+	}
+
+	if strict {
+		return errInvalidServerResponse
 	}
 
 	return nil
 }
 
 func (cracker *Firecracker) responseErrorStrict(resp *resty.Response, status int) error {
-	if resp.StatusCode() != status {
-		if e, ok := resp.Error().(*apiError); ok {
-			return errors.New(e.Message)
-		}
+	return cracker.responseError(resp, status, true)
+}
 
-		return errInvalidServerError
-	}
-
-	return errInvalidServerResponse
+func (cracker *Firecracker) responseErrorLoose(resp *resty.Response, status int) error {
+	return cracker.responseError(resp, status, false)
 }
 
 // State returns instance ID.
@@ -125,7 +125,7 @@ func (cracker *Firecracker) State() (InstanceState, error) {
 		return Uninitialized, err
 	}
 
-	if err = cracker.responseError(resp, http.StatusOK); err != nil {
+	if err = cracker.responseErrorLoose(resp, http.StatusOK); err != nil {
 		return Uninitialized, err
 	}
 

@@ -1,15 +1,21 @@
 package firecracker
 
 import (
+	"github.com/go-resty/resty"
 	"net/http"
 )
 
-// CreateMetadata adds custom vm related metadata.
-func (cracker *Firecracker) CreateMetadata(metadata map[string]interface{}) error {
-	resp, err := cracker.client.R().
+func (cracker *Firecracker) metadataRequest(metadata map[string]interface{}) *resty.Request {
+	return cracker.client.R().
 		SetHeader("Accept", "application/json").
 		SetError(&apiError{}).
-		SetBody(metadata).
+		SetBody(metadata)
+}
+
+
+// CreateMetadata adds custom vm related metadata.
+func (cracker *Firecracker) CreateMetadata(metadata map[string]interface{}) error {
+	resp, err := cracker.metadataRequest(metadata).
 		Put("/mmds")
 
 	if err != nil {
@@ -21,10 +27,7 @@ func (cracker *Firecracker) CreateMetadata(metadata map[string]interface{}) erro
 
 // UpdateMetadata updates custom vm related metadata.
 func (cracker *Firecracker) UpdateMetadata(metadata map[string]interface{}) error {
-	resp, err := cracker.client.R().
-		SetHeader("Accept", "application/json").
-		SetError(&apiError{}).
-		SetBody(metadata).
+	resp, err := cracker.metadataRequest(metadata).
 		Patch("/mmds")
 
 	if err != nil {
@@ -46,7 +49,7 @@ func (cracker *Firecracker) Metadata() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	if err = cracker.responseError(resp, http.StatusNoContent); err != nil {
+	if err = cracker.responseErrorLoose(resp, http.StatusNoContent); err != nil {
 		return nil, err
 	}
 

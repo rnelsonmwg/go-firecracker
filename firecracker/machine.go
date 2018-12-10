@@ -1,7 +1,6 @@
 package firecracker
 
 import (
-	"errors"
 	"net/http"
 )
 
@@ -13,10 +12,10 @@ const (
 )
 
 type MachineConfig struct {
-	VCpuCount   int64       `json:"vcpu_count"`
-	MemSizeMb   int64       `json:"mem_size_mib"`
-	HTEnabled   bool        `json:"ht_enabled"`
-	CPUTemplate CPUTemplate `json:"cpu_template"`
+	VCpuCount   int64       `json:"vcpu_count,omitempty"`
+	MemSizeMb   int64       `json:"mem_size_mib,omitempty"`
+	HTEnabled   bool        `json:"ht_enabled,omitempty"`
+	CPUTemplate CPUTemplate `json:"cpu_template,omitempty"`
 }
 
 // Config returns machine config of the vm, cpu/mem limits
@@ -31,12 +30,8 @@ func (cracker *Firecracker) Config() (*MachineConfig, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode() != http.StatusNoContent {
-		if e, ok := resp.Error().(*apiError); ok {
-			return nil, errors.New(e.Message)
-		}
-
-		return nil, errInvalidServerError
+	if err = cracker.responseErrorLoose(resp, http.StatusNoContent); err != nil {
+		return nil, err
 	}
 
 	if config, ok := resp.Result().(*MachineConfig); ok {
