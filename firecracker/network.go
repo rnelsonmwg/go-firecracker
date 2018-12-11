@@ -1,9 +1,5 @@
 package firecracker
 
-import (
-	"net/http"
-)
-
 type NetworkInterface struct {
 	ID string `json:"iface_id"`
 
@@ -31,5 +27,5 @@ func (cracker *Firecracker) CreateNetworkInterface(id string, netInterface Netwo
 		return err
 	}
 
-	return cracker.responseErrorStrict(resp, http.StatusNoContent)
+	return cracker.responseError(resp)
 }

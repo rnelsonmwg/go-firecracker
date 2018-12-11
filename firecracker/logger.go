@@ -1,9 +1,5 @@
 package firecracker
 
-import (
-	"net/http"
-)
-
 type LoggingLevel string
 
 const (
@@ -34,5 +30,5 @@ func (cracker *Firecracker) InitLogger(logger *Logger) error {
 		return err
 	}
 
-	return cracker.responseErrorStrict(resp, http.StatusNoContent)
+	return cracker.responseError(resp)
 }

@@ -3,7 +3,6 @@ package firecracker
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/go-resty/resty"
 	"net"
 	"net/http"
@@ -40,13 +39,13 @@ type Firecracker struct {
 	client *resty.Client
 }
 
-// NewSocket creates a firecracker client instance, uses a unix socket file for communication.
-func NewSocket(path string) (*Firecracker, error) {
+// New creates a firecracker client instance, uses a unix socket file for communication.
+func New(socketPath string) (*Firecracker, error) {
 	cracker := &Firecracker{
 		client: resty.NewWithClient(&http.Client{
 			Transport: &http.Transport{
 				DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-					return net.Dial("unix", path)
+					return net.Dial("unix", socketPath)
 				},
 			},
 		}),
@@ -62,27 +61,7 @@ func NewSocket(path string) (*Firecracker, error) {
 	return cracker, nil
 }
 
-// New creates a firecracker client instance, uses a host:port combination for communication.
-func New(host string, port int) *Firecracker {
-	cracker := &Firecracker{
-		client: resty.New(),
-	}
-
-	cracker.client.SetHostURL(fmt.Sprintf("http://%v:%v", host, port))
-
-	_, err := cracker.State()
-	if err != nil {
-		return nil
-	}
-
-	return cracker
-}
-
-func (cracker *Firecracker) responseError(resp *resty.Response, status int, strict bool) error {
-	if resp.StatusCode() == status {
-		return nil
-	}
-
+func (cracker *Firecracker) responseError(resp *resty.Response) error {
 	if resp.IsError() {
 		if e, ok := resp.Error().(*apiError); ok {
 			if e.Message != "" {
@@ -93,19 +72,7 @@ func (cracker *Firecracker) responseError(resp *resty.Response, status int, stri
 		return errInvalidServerError
 	}
 
-	if strict {
-		return errInvalidServerResponse
-	}
-
 	return nil
-}
-
-func (cracker *Firecracker) responseErrorStrict(resp *resty.Response, status int) error {
-	return cracker.responseError(resp, status, true)
-}
-
-func (cracker *Firecracker) responseErrorLoose(resp *resty.Response, status int) error {
-	return cracker.responseError(resp, status, false)
 }
 
 // State returns instance ID.
@@ -130,7 +97,7 @@ func (cracker *Firecracker) State() (InstanceState, error) {
 		return Uninitialized, err
 	}
 
-	if err = cracker.responseErrorLoose(resp, http.StatusOK); err != nil {
+	if err = cracker.responseError(resp); err != nil {
 		return Uninitialized, err
 	}
 
@@ -162,7 +129,7 @@ func (cracker *Firecracker) action(typ string, payload string) error {
 		return err
 	}
 
-	err = cracker.responseErrorStrict(resp, http.StatusNoContent)
+	err = cracker.responseError(resp)
 
 
 	return err

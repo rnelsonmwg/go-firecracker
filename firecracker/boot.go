@@ -1,9 +1,5 @@
 package firecracker
 
-import (
-	"net/http"
-)
-
 type bootSource struct {
 	KernelImagePath string `json:"kernel_image_path"`
 	BootArgs        string `json:"boot_args,omitempty"`
@@ -25,5 +21,5 @@ func (cracker *Firecracker) SetBootSource(imagePath string, bootArgs string) err
 		return err
 	}
 
-	return cracker.responseErrorStrict(resp, http.StatusNoContent)
+	return cracker.responseError(resp)
 }

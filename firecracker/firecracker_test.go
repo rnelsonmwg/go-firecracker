@@ -39,7 +39,7 @@ func setupTestVM(socket string) {
 	So(err, ShouldBeNil)
 	So(st.IsDir(), ShouldBeTrue)
 
-	client, err := NewSocket(socketPath(socket))
+	client, err := New(socketPath(socket))
 	So(err, ShouldBeNil)
 	So(client, ShouldNotBeNil)
 
@@ -54,12 +54,27 @@ func setupTestVM(socket string) {
 	})
 	So(err, ShouldBeNil)
 
+	err = client.UpdateDrivePath("rootfs", path.Join(tp, "hello-rootfs.ext4"))
+	So(err, ShouldBeNil)
+
+	conf := &MachineConfig{
+		CPUTemplate:C3Template,
+		VCpuCount: 1,
+		MemSizeMb: 32,
+	}
+	err = client.SetConfig(conf)
+	So(err, ShouldBeNil)
+
 	err = client.Start()
 	So(err, ShouldBeNil)
 
 	state, err := client.State()
 	So(err, ShouldBeNil)
 	So(state, ShouldEqual, Running)
+
+	readConfig, err := client.Config()
+	So(err, ShouldBeNil)
+	So(readConfig, ShouldResemble, conf)
 
 	err = client.Rescan("rootfs")
 	So(err, ShouldBeNil)
@@ -106,13 +121,15 @@ func TestFirecracker(t *testing.T) {
 			crackerProc := startFirecracker(socket)
 			defer stopFirecracker(crackerProc)
 
-			client, err := NewSocket(socketPath(socket))
+			client, err := New(socketPath(socket))
 			So(err, ShouldBeNil)
 			So(client, ShouldNotBeNil)
 
 			id, err := client.ID()
 			So(err, ShouldBeNil)
 			So(id, ShouldNotBeEmpty)
+
+			So(id, ShouldEqual, "anonymous-instance")
 
 			state, err := client.State()
 			So(err, ShouldBeNil)

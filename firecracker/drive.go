@@ -1,9 +1,5 @@
 package firecracker
 
-import (
-	"net/http"
-)
-
 type StorageDrive struct {
 	ID            string      `json:"drive_id"`
 	HostPath      string      `json:"path_on_host"`
@@ -29,7 +25,7 @@ func (cracker *Firecracker) SetDrive(
 		return err
 	}
 
-	return cracker.responseErrorStrict(resp, http.StatusNoContent)
+	return cracker.responseError(resp)
 }
 
 // UpdateDrivePath updates vm drive path by ID.
@@ -41,7 +37,7 @@ func (cracker *Firecracker) UpdateDrivePath(id string, hostPath string) error {
 		}).
 		SetError(&apiError{}).
 		SetBody(map[string]interface{}{
-			"id":           id,
+			"drive_id":           id,
 			"path_on_host": hostPath,
 		}).
 		Patch("/drives/{drive_id}")
@@ -50,5 +46,5 @@ func (cracker *Firecracker) UpdateDrivePath(id string, hostPath string) error {
 		return err
 	}
 
-	return cracker.responseErrorStrict(resp, http.StatusNoContent)
+	return cracker.responseError(resp)
 }

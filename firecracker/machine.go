@@ -1,9 +1,5 @@
 package firecracker
 
-import (
-	"net/http"
-)
-
 type CPUTemplate string
 
 const (
@@ -30,7 +26,7 @@ func (cracker *Firecracker) Config() (*MachineConfig, error) {
 		return nil, err
 	}
 
-	if err = cracker.responseErrorLoose(resp, http.StatusNoContent); err != nil {
+	if err = cracker.responseError(resp); err != nil {
 		return nil, err
 	}
 
@@ -53,5 +49,5 @@ func (cracker *Firecracker) SetConfig(config *MachineConfig) error {
 		return err
 	}
 
-	return cracker.responseErrorStrict(resp, http.StatusNoContent)
+	return cracker.responseError(resp)
 }

@@ -9,4 +9,8 @@
 
 ## Status: WIP
 
-Needs tests.  
+Needs more tests.  
+
+There's no proper halt in firecracker [yet #673](https://github.com/firecracker-microvm/firecracker/issues/673).
+
+Tested with Firecracker [0.11.0](https://github.com/firecracker-microvm/firecracker/tree/v0.11.0).

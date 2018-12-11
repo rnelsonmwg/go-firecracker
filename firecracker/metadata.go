@@ -2,7 +2,6 @@ package firecracker
 
 import (
 	"github.com/go-resty/resty"
-	"net/http"
 )
 
 func (cracker *Firecracker) metadataRequest(metadata map[string]interface{}) *resty.Request {
@@ -22,7 +21,7 @@ func (cracker *Firecracker) CreateMetadata(metadata map[string]interface{}) erro
 		return err
 	}
 
-	return cracker.responseErrorStrict(resp, http.StatusNoContent)
+	return cracker.responseError(resp)
 }
 
 // UpdateMetadata updates custom vm related metadata.
@@ -34,7 +33,7 @@ func (cracker *Firecracker) UpdateMetadata(metadata map[string]interface{}) erro
 		return err
 	}
 
-	return cracker.responseErrorStrict(resp, http.StatusNoContent)
+	return cracker.responseError(resp)
 }
 
 // Metadata returns custom vm related metadata.
@@ -49,7 +48,7 @@ func (cracker *Firecracker) Metadata() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	if err = cracker.responseErrorLoose(resp, http.StatusNoContent); err != nil {
+	if err = cracker.responseError(resp); err != nil {
 		return nil, err
 	}
 
