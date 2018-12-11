@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-resty/resty"
 	"net"
 	"net/http"
-
-	"github.com/go-resty/resty"
 )
 
 type InstanceState string
@@ -42,7 +41,7 @@ type Firecracker struct {
 }
 
 // NewSocket creates a firecracker client instance, uses a unix socket file for communication.
-func NewSocket(path string) *Firecracker {
+func NewSocket(path string) (*Firecracker, error) {
 	cracker := &Firecracker{
 		client: resty.NewWithClient(&http.Client{
 			Transport: &http.Transport{
@@ -53,14 +52,14 @@ func NewSocket(path string) *Firecracker {
 		}),
 	}
 
-	cracker.client.SetHostURL("http://localhost")
+	cracker.client.SetHostURL("http://unix")
 
 	_, err := cracker.State()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return cracker
+	return cracker, nil
 }
 
 // New creates a firecracker client instance, uses a host:port combination for communication.
@@ -80,9 +79,15 @@ func New(host string, port int) *Firecracker {
 }
 
 func (cracker *Firecracker) responseError(resp *resty.Response, status int, strict bool) error {
-	if resp.StatusCode() != status {
+	if resp.StatusCode() == status {
+		return nil
+	}
+
+	if resp.IsError() {
 		if e, ok := resp.Error().(*apiError); ok {
-			return errors.New(e.Message)
+			if e.Message != "" {
+				return errors.New(e.Message)
+			}
 		}
 
 		return errInvalidServerError
@@ -138,34 +143,37 @@ func (cracker *Firecracker) State() (InstanceState, error) {
 }
 
 func (cracker *Firecracker) action(typ string, payload string) error {
+	body := map[string]interface{}{
+		"action_type": typ,
+	}
+
+	if payload != "" {
+		body["payload"] = payload
+	}
+
 	resp, err := cracker.client.R().
 		SetHeader("Accept", "application/json").
 		SetError(&apiError{}).
-		SetBody(map[string]interface{}{
-			"action_type": typ,
-			"payload":     payload,
-		}).
-		Put("/")
+		SetBody(body).
+		Put("/actions")
+
 
 	if err != nil {
 		return err
 	}
 
+	err = cracker.responseErrorStrict(resp, http.StatusNoContent)
 
-	return cracker.responseErrorStrict(resp, http.StatusNoContent)
+
+	return err
 }
 
 // Rescan available block devices.
-func (cracker *Firecracker) Rescan(payload string) error {
-	return cracker.action("BlockDeviceRescan", payload)
+func (cracker *Firecracker) Rescan(drive string) error {
+	return cracker.action("BlockDeviceRescan", drive)
 }
 
 // Start starts the firecracker instance.
-func (cracker *Firecracker) Start(payload string) error {
-	return cracker.action("InstanceStart", payload)
-}
-
-// Halt halts the firecracker instance, duh.
-func (cracker *Firecracker) Halt(payload string) error {
-	return cracker.action("InstanceHalt", payload)
+func (cracker *Firecracker) Start() error {
+	return cracker.action("InstanceStart", "")
 }

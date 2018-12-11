@@ -67,8 +67,7 @@ RUN go get -d -u github.com/golang/dep && \
 
 ARG GOLANGCI_VERSION=1.12.3
 
-RUN go get -u github.com/smartystreets/goconvey && \
-    go get -u github.com/mattn/goveralls && \
+RUN go get -u github.com/mattn/goveralls && \
     curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | \
         sh -s -- -b $GOPATH/bin v${GOLANGCI_VERSION}
 
